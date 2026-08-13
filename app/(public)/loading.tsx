@@ -1,0 +1,2 @@
+export default function PublicLoading(){return <main><section className="bg-surface"><div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[5fr_7fr]"><div><div className="skeleton h-5 w-44 rounded"/><div className="skeleton mt-6 h-28 max-w-lg rounded-2xl"/><div className="skeleton mt-6 h-12 max-w-md rounded-xl"/></div><div className="skeleton h-[430px] rounded-3xl"/></div></section></main>}
+

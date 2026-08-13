@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorPage({ reset }: { error: Error; reset: () => void }) { return <main className="mx-auto max-w-2xl px-4 py-16"><div className="rounded-2xl border border-line bg-surface p-6"><h1 className="text-h2">We could not load booking right now</h1><p className="mt-3 text-ink-muted">Check your connection and try again.</p><button onClick={reset} className="mt-6 min-h-12 rounded-xl bg-brand-900 px-5 font-semibold text-white">Try again</button></div></main>; }
