@@ -1,16 +1,22 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { connection } from "next/server";
 import { ArrowLeft, Lightning } from "@phosphor-icons/react/dist/ssr";
 import { getPublicServices } from "@/features/services/queries";
 import { ManualBookingForm } from "@/components/portal/manual-booking-form";
 import { getRecentCustomers } from "@/features/customers/queries";
+import { PortalFormSkeleton } from "@/components/ui/skeletons";
 
 export const metadata = { title: "New manual booking" };
 export const instant = false;
 
-export default async function NewBookingPage() {
+async function BookingForm() {
   await connection();
   const [services, recentCustomers] = await Promise.all([getPublicServices(), getRecentCustomers()]);
+  return <ManualBookingForm services={services} recentCustomers={recentCustomers.map((customer) => ({ ...customer, lastBookedAt: customer.lastBookedAt.toISOString() }))}/>;
+}
+
+export default function NewBookingPage() {
   return (
     <div className="mx-auto w-full max-w-[1180px]">
       <Link href="/portal/owner/bookings" className="inline-flex min-h-11 items-center gap-2 rounded-xl px-1 text-sm font-semibold text-ink-muted transition-colors hover:text-brand-950">
@@ -24,10 +30,7 @@ export default async function NewBookingPage() {
         </div>
         <span className="inline-flex w-fit items-center rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink-muted">Live conflict checks enabled</span>
       </header>
-      <ManualBookingForm
-        services={services}
-        recentCustomers={recentCustomers.map((customer) => ({ ...customer, lastBookedAt: customer.lastBookedAt.toISOString() }))}
-      />
+      <div className="mt-6"><Suspense fallback={<PortalFormSkeleton/>}><BookingForm/></Suspense></div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Bank, CalendarBlank, CaretDown, Check, Clock, FloppyDisk, Info, MapPin, MinusCircle, UsersThree } from "@phosphor-icons/react";
 import { createBusinessClosure, removeBusinessClosure, setFlexCapacity, updateBusinessHours, updateBusinessSettings } from "@/features/settings/actions";
@@ -19,6 +19,8 @@ export function SettingsManager({ settings, hours, categories, closures }: { set
   const router = useRouter();
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<{ text: string; success: boolean } | null>(null);
+  const [optimisticCategories, updateOptimisticCategory] = useOptimistic(categories, (state, change: { id: string; capacity: number; available24Hours: boolean }) => state.map((category) => category.id === change.id ? { ...category, flexCapacity: change.capacity, available24Hours: change.available24Hours } : category));
+  const [busyCategory, setBusyCategory] = useState<string | null>(null);
 
   function run(work: () => Promise<ActionResult>) {
     setMessage(null);
@@ -27,6 +29,20 @@ export function SettingsManager({ settings, hours, categories, closures }: { set
       if (!result.ok) return setMessage({ text: result.error?.message ?? "Unable to save changes.", success: false });
       setMessage({ text: "Changes saved.", success: true });
       router.refresh();
+    });
+  }
+
+  function saveCapacity(category: Category, form: FormData) {
+    if (busyCategory) return;
+    const capacity = Number(form.get("capacity"));
+    const available24Hours = form.get("available24Hours") === "on";
+    setBusyCategory(category.id);
+    setMessage(null);
+    start(async () => {
+      updateOptimisticCategory({ id: category.id, capacity, available24Hours });
+      const result = await setFlexCapacity({ categoryId: category.id, capacity, available24Hours });
+      setBusyCategory(null);
+      setMessage(result.ok ? { text: "Capacity saved.", success: true } : { text: result.error?.message ?? "Unable to save capacity.", success: false });
     });
   }
 
@@ -68,12 +84,12 @@ export function SettingsManager({ settings, hours, categories, closures }: { set
       </form>
     </SettingsSection>
 
-    <SettingsSection icon={<UsersThree size={20} weight="duotone" />} title="Future staffing capacity" description="Appointments you can staff later" tone="teal">
-      <div className="mb-2 flex gap-2 rounded-xl bg-brand-50 p-3 text-xs leading-5 text-brand-900"><Info className="mt-0.5 shrink-0" size={16} weight="fill" /><p>Keep a category at zero unless Beautyfeel can supply additional staff for future bookings.</p></div>
-      <div className="divide-y divide-line">{categories.map((category) => <form key={category.id} className="grid grid-cols-[1fr_68px_auto] items-center gap-2 py-3" action={(form) => run(() => setFlexCapacity({ categoryId: category.id, capacity: Number(form.get("capacity")), available24Hours: form.get("available24Hours") === "on" }))}>
+    <SettingsSection icon={<UsersThree size={20} weight="duotone" />} title="Category capacity" description="Simultaneous appointments per service category" tone="teal">
+      <div className="mb-2 flex gap-2 rounded-xl bg-brand-50 p-3 text-xs leading-5 text-brand-900"><Info className="mt-0.5 shrink-0" size={16} weight="fill" /><p>Set how many customers Beautyfeel can serve at the same time in each category.</p></div>
+      <div className="divide-y divide-line">{optimisticCategories.map((category) => <form key={category.id} className="grid grid-cols-[1fr_68px_auto] items-center gap-2 py-3" action={(form) => saveCapacity(category, form)}>
         <div className="min-w-0"><label className="block truncate text-sm font-semibold" htmlFor={`capacity-${category.id}`}>{category.name}</label><label className="mt-1 flex min-h-8 cursor-pointer items-center gap-2 text-xs text-ink-muted"><input name="available24Hours" type="checkbox" defaultChecked={category.available24Hours} className="size-4 accent-[#174e4f]" />Available 24/7</label></div>
         <input id={`capacity-${category.id}`} aria-label={`${category.name} flex capacity`} name="capacity" type="number" min="0" max="20" defaultValue={category.flexCapacity} className={`${inputClass} text-center tabular`} />
-        <button disabled={pending} className="grid size-11 place-items-center rounded-xl border border-line bg-surface text-brand-900 transition hover:bg-brand-50 active:scale-[.98] disabled:opacity-50" aria-label={`Save ${category.name} capacity`}><FloppyDisk size={17} weight="duotone" /></button>
+        <button disabled={busyCategory===category.id} className="grid size-11 place-items-center rounded-xl border border-line bg-surface text-brand-900 transition hover:bg-brand-50 active:scale-[.98] disabled:opacity-50" aria-label={`Save ${category.name} capacity`}><FloppyDisk size={17} weight="duotone" /></button>
       </form>)}</div>
     </SettingsSection>
 

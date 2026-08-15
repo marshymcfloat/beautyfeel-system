@@ -78,7 +78,7 @@ async function createAllocatedBooking(
       gcashSenderName: input.gcashSenderName,
       source: options.source,
       status: options.status,
-      staffingStatus: plan.staffingMode === "FLEX_CAPACITY" ? "FLEX_RESERVED" : "ASSIGNED",
+      staffingStatus: "ASSIGNED",
       subtotalCentavos,
       depositCentavos,
       requestedStartsAt: plan.startsAt,
@@ -263,7 +263,7 @@ export async function rescheduleExistingBooking(input: RescheduleInput, actorId:
     if (!isWithinBookingWindow(input.startsAt, new Date(), settings.minimumLeadMinutes, settings.maximumAdvanceDays)) throw new DomainError("VALIDATION_ERROR", "The requested time is outside the booking window.");
     const bookingServices = new Map(booking.services.map((item) => [item.serviceId, item.id]));
     await tx.bookingSegment.createMany({ data: plan.segments.map((segment) => ({ bookingId: booking.id, bookingServiceId: bookingServices.get(segment.serviceId)!, staffId: segment.staffId, flexUnitId: segment.flexUnitId, startsAt: segment.startsAt, endsAt: segment.endsAt, blockedUntil: segment.blockedUntil, executionOrder: segment.executionOrder })) });
-    await tx.booking.update({ where: { id: booking.id }, data: { requestedStartsAt: plan.startsAt, requestedEndsAt: plan.endsAt, staffingStatus: plan.staffingMode === "FLEX_CAPACITY" ? "FLEX_RESERVED" : "ASSIGNED", rescheduleCount: { increment: 1 } } });
+    await tx.booking.update({ where: { id: booking.id }, data: { requestedStartsAt: plan.startsAt, requestedEndsAt: plan.endsAt, staffingStatus: "ASSIGNED", rescheduleCount: { increment: 1 } } });
     await tx.bookingStatusHistory.create({ data: { bookingId: booking.id, fromStatus: "CONFIRMED", toStatus: "CONFIRMED", actorId, reason: input.overrideReason ?? "Booking rescheduled." } });
     await tx.smsOutbox.create({ data: { eventKey: `${booking.id}:RESCHEDULED:${booking.rescheduleCount + 1}`, eventType: "CONFIRMED", recipientE164: booking.customerPhoneE164, payload: { customerName: booking.customerName, startsAt: plan.startsAt.toISOString() } } });
     await tx.auditLog.create({ data: { actorId, action: "BOOKING_RESCHEDULED", entityType: "Booking", entityId: booking.id, metadata: { overrideReason: input.overrideReason ?? null } } });

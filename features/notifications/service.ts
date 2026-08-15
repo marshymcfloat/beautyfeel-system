@@ -83,6 +83,8 @@ export async function processSmsOutbox(
           customerName: typeof payload.customerName === "string" ? payload.customerName : undefined,
           startsAt: typeof payload.startsAt === "string" ? payload.startsAt : undefined,
           message: typeof payload.message === "string" ? payload.message : undefined,
+          phone: typeof payload.phone === "string" ? payload.phone : undefined,
+          temporaryPassword: typeof payload.temporaryPassword === "string" ? payload.temporaryPassword : undefined,
         }),
       });
       await prisma.smsOutbox.update({ where: { id: candidate.id }, data: { status: "SENT", sentAt: new Date(), providerMessageId: result.providerMessageId, lastErrorCode: null } });
@@ -155,10 +157,9 @@ export async function runBookingMaintenance(now = new Date()) {
   await prisma.publicRateLimit.deleteMany({ where: { expiresAt: { lte: now } } });
   const reminders = await enqueueDueReminders(now);
   const thirtyMinuteReminders = await enqueueThirtyMinuteReminders(now);
-  const staffingAlerts = await enqueueStaffingAlerts(now);
   const overduePayments = await escalateOverduePayments(now);
   const expiredCredits = await prisma.storeCredit.updateMany({ where: { status: "ACTIVE", expiresAt: { lte: now } }, data: { status: "EXPIRED", remainingCentavos: 0 } });
   const sms = await processSmsOutbox(new SemaphoreSmsProvider(), now);
   await prisma.auditLog.create({ data: { action: "BOOKING_MAINTENANCE_COMPLETED", entityType: "System", entityId: "booking-maintenance", metadata: { ranAt: now.toISOString() } } });
-  return { expired: expired.length, reminders, thirtyMinuteReminders, staffingAlerts, overduePayments, expiredCredits: expiredCredits.count, sms };
+  return { expired: expired.length, reminders, thirtyMinuteReminders, overduePayments, expiredCredits: expiredCredits.count, sms };
 }

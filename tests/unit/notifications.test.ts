@@ -30,4 +30,12 @@ describe("SMS templates", () => {
     expect(body).not.toContain("BF-20260809-ABCDEF12");
     expect(body.length).toBeLessThanOrEqual(160);
   });
+
+  it("renders assistant credentials and first-login instructions", () => {
+    const body = renderSms("ASSISTANT_WELCOME", { customerName: "Ana Cruz", phone: "+639171234567", temporaryPassword: "Befu4827" });
+    expect(body).toContain("Hi Ana!");
+    expect(body).toContain("+639171234567");
+    expect(body).toContain("Befu4827");
+    expect(body).toContain("change it after signing in");
+  });
 });

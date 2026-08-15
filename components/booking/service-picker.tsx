@@ -201,6 +201,7 @@ export function ServicePicker({ services, depositPercent }: { services: Service[
           <input
             id="service-search-mobile-full"
             type="search"
+            autoComplete="off"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search facial, massage, lashes…"
@@ -236,7 +237,7 @@ export function ServicePicker({ services, depositPercent }: { services: Service[
         <div className="relative mx-auto max-w-2xl">
           <MagnifyingGlass aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-subtle" size={19} />
           <label htmlFor="service-search-mobile-sticky" className="sr-only">Search services</label>
-          <input id="service-search-mobile-sticky" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search services…" className={`min-h-12 w-full rounded-xl border border-line bg-surface pl-11 text-base placeholder:text-ink-subtle ${selected.length ? "pr-28" : "pr-4"}`} />
+          <input id="service-search-mobile-sticky" type="search" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search services…" className={`min-h-12 w-full rounded-xl border border-line bg-surface pl-11 text-base placeholder:text-ink-subtle ${selected.length ? "pr-28" : "pr-4"}`} />
           {selected.length > 0 && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-brand-100 px-2 py-1 text-xs font-semibold text-brand-950">{selected.length} selected</span>}
         </div>
         <div className="scrollbar-none mx-auto mt-2 w-full max-w-2xl snap-x snap-mandatory overflow-x-auto overscroll-x-contain">
@@ -256,6 +257,7 @@ export function ServicePicker({ services, depositPercent }: { services: Service[
         <input
           id="service-search-desktop"
           type="search"
+          autoComplete="off"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search facial, massage, lashes…"

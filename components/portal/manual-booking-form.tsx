@@ -27,7 +27,7 @@ type Service = {
   category: { name: string };
 };
 
-export function ManualBookingForm({ services, recentCustomers }: { services: Service[]; recentCustomers: RecentCustomer[] }) {
+export function ManualBookingForm({ services, recentCustomers, bookingBasePath = "/portal/owner/bookings" }: { services: Service[]; recentCustomers: RecentCustomer[]; bookingBasePath?: string }) {
   const router = useRouter();
   const openedAt = useRef(0);
   const [pending, startTransition] = useTransition();
@@ -87,8 +87,8 @@ export function ManualBookingForm({ services, recentCustomers }: { services: Ser
     const startsAt = bookingMode === "WALK_IN" ? walkInStartsAt() : new Date(`${date}T${time}:00+08:00`);
     startTransition(async () => {
       const result = await createManualBooking({
-        customerName: formData.get("name"),
-        customerPhone: formData.get("phone"),
+        customerName,
+        customerPhone,
         serviceIds: selectedIds,
         startsAt,
         source: bookingMode === "WALK_IN" ? "WALK_IN" : formData.get("source"),
@@ -99,12 +99,12 @@ export function ManualBookingForm({ services, recentCustomers }: { services: Ser
         setError(result.error.message);
         return;
       }
-      router.push(`/portal/owner/bookings/${result.data.bookingId}`);
+      router.push(`${bookingBasePath}/${result.data.bookingId}`);
     });
   }
 
   return (
-    <form action={submit} className="mt-6 grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <form action={submit} autoComplete="off" className="mt-6 grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-5">
         <Section number="01" title="Customer" description="Who is this appointment for?" icon={<User aria-hidden size={20} weight="duotone" />}>
           {recentCustomers.length > 0 && (
@@ -153,12 +153,12 @@ export function ManualBookingForm({ services, recentCustomers }: { services: Ser
           )}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full name">
-              <input name="name" value={customerName} onChange={(event) => setCustomerName(event.target.value)} autoComplete="name" required minLength={2} maxLength={100} className={inputClass} placeholder="Customer name" />
+              <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} autoComplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" spellCheck={false} required minLength={2} maxLength={100} className={inputClass} placeholder="Customer name" />
             </Field>
             <Field label="Mobile number">
               <div className="relative">
                 <Phone aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle" size={18} />
-                <input name="phone" value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} type="tel" inputMode="tel" autoComplete="tel" required className={`${inputClass} pl-10`} placeholder="09XX XXX XXXX" />
+                <input value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} type="tel" inputMode="tel" autoComplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" required className={`${inputClass} pl-10`} placeholder="09XX XXX XXXX" />
               </div>
             </Field>
           </div>
@@ -168,7 +168,7 @@ export function ManualBookingForm({ services, recentCustomers }: { services: Ser
           <label className="relative block">
             <span className="sr-only">Search services</span>
             <MagnifyingGlass aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle" size={18} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" className={`${inputClass} pl-10`} placeholder="Search by service or category" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" autoComplete="off" className={`${inputClass} pl-10`} placeholder="Search by service or category" />
           </label>
 
           <div className="mt-4 max-h-[390px] overflow-y-auto rounded-xl border border-line" aria-label="Available services">

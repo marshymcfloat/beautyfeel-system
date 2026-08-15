@@ -86,7 +86,7 @@ export async function getOwnerBookingsIndex(input: unknown = {}) {
 }
 
 export async function getDashboardSchedule(input: unknown) {
-  await requireActor(["OWNER", "STAFF"]);
+  await requireActor(["OWNER", "BOOKING_ASSISTANT"]);
   const range = rangeSchema.parse(input);
   return prisma.booking.findMany({
     where: { status: "CONFIRMED", requestedStartsAt: { lt: range.endsAt }, requestedEndsAt: { gt: range.startsAt } },
@@ -144,6 +144,17 @@ export async function getOwnerBookingById(bookingId: string) {
       segments: { where: { allocationState: "ACTIVE" }, include: { staff: { select: { id: true, publicName: true } }, flexUnit: { select: { unitNumber: true, category: { select: { name: true } } } } }, orderBy: { executionOrder: "asc" } },
       statusHistory: { orderBy: { createdAt: "desc" }, take: 20 },
     },
+  });
+  if (!booking) throw new DomainError("NOT_FOUND", "Booking not found.");
+  return booking;
+}
+
+export async function getAssistantBookingById(bookingId: string) {
+  await requireActor(["BOOKING_ASSISTANT"]);
+  const id = z.string().uuid().parse(bookingId);
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    select: { id: true, publicCode: true, customerName: true, customerPhoneE164: true, source: true, status: true, requestedStartsAt: true, requestedEndsAt: true, subtotalCentavos: true, depositCentavos: true, deposit: { select: { status: true } }, services: { select: { id: true, serviceName: true, durationMinutes: true, priceCentavos: true } }, statusHistory: { select: { id: true, toStatus: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 10 } },
   });
   if (!booking) throw new DomainError("NOT_FOUND", "Booking not found.");
   return booking;

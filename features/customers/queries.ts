@@ -13,7 +13,7 @@ export async function getBookingOperations(bookingId:string,phoneE164:string){
 }
 
 export async function getRecentCustomers() {
-  await requireActor(["OWNER"]);
+  await requireActor(["OWNER", "BOOKING_ASSISTANT"]);
   const bookings = await prisma.booking.findMany({
     select: { customerName: true, customerPhoneE164: true, requestedStartsAt: true },
     orderBy: { createdAt: "desc" },

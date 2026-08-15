@@ -29,15 +29,13 @@ async function HomeContent() {
   const today = confirmed.filter((item) => DateTime.fromJSDate(item.requestedStartsAt, { zone: "utc" }).setZone("Asia/Manila").toISODate() === todayStart.toISODate());
   const upcoming = confirmed.filter((item) => item.requestedStartsAt >= tomorrow.toUTC().toJSDate()).slice(0, 3);
   const paymentClaims = queue.filter((item) => item.status === "PENDING_VERIFICATION");
-  const staffing = confirmed.filter((item) => item.staffingStatus === "FLEX_RESERVED");
+  const staffing: typeof confirmed = [];
   const unreadAlerts = alerts.filter((item) => !item.readAt);
   const needsAttention = paymentClaims.length > 0 || staffing.length > 0 || unreadAlerts.length > 0;
   const env = getServerEnv();
 
   return <div className="space-y-4">
     <RealtimeRefresh url={env.SUPABASE_URL} publishableKey={env.SUPABASE_PUBLISHABLE_KEY} topics={[`schedule:${todayStart.toISODate()}`, "schedule:all"]} />
-
-    <header className="flex items-end justify-between gap-4 pb-1"><div><p className="text-[11px] font-semibold text-brand-700">{now.toFormat("cccc, d LLLL")}</p><h1 className="mt-1 text-2xl font-semibold tracking-[-.035em] sm:text-3xl">Home</h1><p className="mt-2 text-sm text-ink-muted">What needs attention and what is coming next.</p></div><Link href="/portal/owner/bookings/new" className="hidden min-h-11 items-center gap-2 rounded-xl bg-brand-950 px-4 text-sm font-semibold text-white sm:inline-flex"><Plus size={16} weight="bold" /> New booking</Link></header>
 
     <section className="grid grid-cols-3 gap-2" aria-label="Workspace overview">
       <Summary icon={<CalendarCheck size={22} weight="duotone" />} value={today.length} label="Today" tone="green" />
@@ -80,5 +78,5 @@ function HomeSkeleton() {
 }
 
 export default function HomePage() {
-  return <Suspense fallback={<HomeSkeleton />}><HomeContent /></Suspense>;
+  return <div><header className="flex items-end justify-between gap-4 pb-1"><div><p className="text-[11px] font-semibold text-brand-700">Owner workspace</p><h1 className="mt-1 text-2xl font-semibold tracking-[-.035em] sm:text-3xl">Home</h1><p className="mt-2 text-sm text-ink-muted">What needs attention and what is coming next.</p></div><Link href="/portal/owner/bookings/new" className="hidden min-h-11 items-center gap-2 rounded-xl bg-brand-950 px-4 text-sm font-semibold text-white sm:inline-flex"><Plus size={16} weight="bold" /> New booking</Link></header><div className="mt-4"><Suspense fallback={<HomeSkeleton />}><HomeContent /></Suspense></div></div>;
 }

@@ -1,8 +1,8 @@
 import "server-only";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { allocateServices, generateStartTimes } from "./allocator";
-import { getLocalDayBounds, isFlexCapacityAllowed, localDateMinuteToUtc } from "./time";
-import type { AllocatableService, AvailableResource, TimeInterval } from "./types";
+import { getLocalDayBounds, localDateMinuteToUtc } from "./time";
+import type { AllocatableService, AvailableResource } from "./types";
 import { DomainError } from "@/lib/errors/domain-error";
 
 type Db = PrismaClient | Prisma.TransactionClient;
@@ -32,23 +32,12 @@ export async function buildAvailabilityContext(
   serviceIds: readonly string[],
 ) {
   const bounds = getLocalDayBounds(localDate);
-  const dateValue = new Date(`${localDate}T00:00:00.000Z`);
-  const [settings, services, staffRows, flexRows, businessHours, closures] = await Promise.all([
+  const [settings, services, flexRows, businessHours, closures] = await Promise.all([
     db.businessSettings.findUnique({ where: { id: 1 } }),
     db.service.findMany({
       where: { id: { in: [...serviceIds] }, active: true, category: { active: true } },
       include: {
-        staffSkills: { where: { staff: { active: true, user: { active: true } } }, select: { staffId: true } },
         category: { select: { id: true, available24Hours: true } },
-      },
-    }),
-    db.staffProfile.findMany({
-      where: { active: true, user: { active: true }, skills: { some: { serviceId: { in: [...serviceIds] } } } },
-      include: {
-        scheduleRules: { where: { weekday: bounds.weekday, effectiveFrom: { lte: dateValue }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: dateValue } }] } },
-        breaks: { where: { OR: [{ date: dateValue }, { date: null, weekday: bounds.weekday }] } },
-        timeOff: { where: { startsAt: { lt: bounds.end }, endsAt: { gt: bounds.start } } },
-        segments: { where: { allocationState: "ACTIVE", startsAt: { lt: bounds.end }, blockedUntil: { gt: bounds.start } }, select: { startsAt: true, blockedUntil: true } },
       },
     }),
     db.flexCapacityUnit.findMany({
@@ -75,29 +64,9 @@ export async function buildAvailabilityContext(
       durationMinutes: service.durationMinutes,
       bufferMinutes: service.bufferMinutes,
       qualifiedResourceIds: [
-        ...service.staffSkills.map((skill) => `staff:${skill.staffId}`),
         ...flexRows.filter((unit) => unit.categoryId === service.categoryId).map((unit) => `flex:${unit.id}`),
       ],
     };
-  });
-
-  const staffResources: AvailableResource[] = staffRows.map((member) => {
-    const working = member.scheduleRules.map((rule) => ({
-      start: localDateMinuteToUtc(localDate, rule.startMinute, settings.timezone),
-      end: localDateMinuteToUtc(localDate, rule.endMinute, settings.timezone),
-    }));
-    const breakIntervals = member.breaks.map((item) => ({
-      start: localDateMinuteToUtc(localDate, item.startMinute, settings.timezone),
-      end: localDateMinuteToUtc(localDate, item.endMinute, settings.timezone),
-    }));
-    const busy: TimeInterval[] = [
-      ...breakIntervals,
-      ...member.timeOff.map((item) => ({ start: item.startsAt, end: item.endsAt })),
-      ...member.segments.map((item) => ({ start: item.startsAt, end: item.blockedUntil })),
-      ...closures.map((item) => ({ start: item.startsAt, end: item.endsAt })),
-    ];
-    const workloadMinutes = member.segments.reduce((total, item) => total + Math.round((item.blockedUntil.getTime() - item.startsAt.getTime()) / 60_000), 0);
-    return { id: `staff:${member.id}`, kind: "NAMED_STAFF", staffId: member.id, flexUnitId: null, working, busy, workloadMinutes };
   });
 
   const flexWorking = businessHours.map((rule) => ({
@@ -119,7 +88,7 @@ export async function buildAvailabilityContext(
     workloadMinutes: unit.segments.reduce((total, item) => total + Math.round((item.blockedUntil.getTime() - item.startsAt.getTime()) / 60_000), 0),
   }));
 
-  return { bounds, settings, services, allocatableServices, resources: [...staffResources, ...flexResources] };
+  return { bounds, settings, services, allocatableServices, resources: flexResources };
 }
 
 export async function findAllocation(
@@ -127,12 +96,9 @@ export async function findAllocation(
   startsAt: Date,
   localDate: string,
   serviceIds: readonly string[],
-  now = new Date(),
 ) {
   const context = await buildAvailabilityContext(db, localDate, serviceIds);
-  const allowFlex = context.services.every((service) => service.category.available24Hours)
-    || isFlexCapacityAllowed(startsAt, now, context.settings.flexStrictCutoffHours);
-  return { context, plan: allocateServices(startsAt, context.allocatableServices, context.resources, { allowFlex }) };
+  return { context, plan: allocateServices(startsAt, context.allocatableServices, context.resources, { allowFlex: true }) };
 }
 
 export type AvailableSlot = {
@@ -154,9 +120,7 @@ export async function listAvailableSlots(
   if (context.bounds.start > latestWindow) return [];
   const latest = new Date(Math.min(context.bounds.end.getTime() - 1, latestWindow.getTime()));
   return generateStartTimes(earliest, latest, context.settings.bookingIntervalMinutes).flatMap((startsAt) => {
-    const allowFlex = context.services.every((service) => service.category.available24Hours)
-      || isFlexCapacityAllowed(startsAt, now, context.settings.flexStrictCutoffHours);
-    const plan = allocateServices(startsAt, context.allocatableServices, context.resources, { allowFlex });
+    const plan = allocateServices(startsAt, context.allocatableServices, context.resources, { allowFlex: true });
     return plan ? [{ startsAt: startsAt.toISOString(), availability: "AVAILABLE" as const, staffingMode: plan.staffingMode }] : [];
   });
 }

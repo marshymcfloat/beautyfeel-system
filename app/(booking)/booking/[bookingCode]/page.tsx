@@ -13,6 +13,7 @@ import { HoldCountdown } from "@/components/booking/hold-countdown";
 import { formatManilaDateTime, formatMoney } from "@/lib/format";
 import { RealtimeRefresh } from "@/components/realtime-refresh";
 import { getServerEnv } from "@/lib/env/server";
+import { BookingStatusMotion } from "@/components/booking/booking-status-motion";
 
 export const metadata = { title: "Booking status", robots: { index: false, follow: false }, referrer: "no-referrer" };
 type Props = { params: Promise<{ bookingCode: string }> };
@@ -32,7 +33,7 @@ async function BookingStatusContent({ params }: Props) {
   const env = getServerEnv();
   const date = DateTime.fromJSDate(booking.requestedStartsAt, { zone: "utc" }).setZone("Asia/Manila").toISODate();
 
-  return <main className="mx-auto w-full max-w-[960px] px-4 py-8 pb-20 sm:px-6 sm:py-12">
+  return <BookingStatusMotion><main className="mx-auto w-full max-w-[960px] px-4 py-8 pb-20 sm:px-6 sm:py-12">
     <RealtimeRefresh url={env.SUPABASE_URL} publishableKey={env.SUPABASE_PUBLISHABLE_KEY} topics={[`availability:${date}`]}/>
     <header className="overflow-hidden rounded-3xl bg-brand-950 text-white"><div className="flex flex-wrap items-start justify-between gap-4 px-5 py-5 sm:px-6"><div><p className="flex items-center gap-2 text-xs font-medium text-white/60"><Receipt aria-hidden size={15}/>Booking reference</p><p className="tabular mt-1 text-sm font-semibold tracking-[.04em]">{booking.publicCode}</p><h1 className="mt-4 text-2xl font-semibold tracking-[-.025em] sm:text-3xl">Your appointment</h1></div><div className="rounded-xl bg-white p-1"><StatusBadge status={booking.status}/></div></div><div className="flex items-center gap-2 border-t border-white/10 bg-white/[.04] px-5 py-3 text-xs text-white/65 sm:px-6"><ShieldCheck aria-hidden size={16} weight="duotone"/>This private page contains the latest booking status.</div></header>
 
@@ -42,7 +43,7 @@ async function BookingStatusContent({ params }: Props) {
       <div className="space-y-5">{canClaim&&<section className="rounded-2xl border border-[#ead9ad] bg-warning-soft p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/70 text-[#735713]"><Wallet aria-hidden size={18}/></span><div><p className="text-[11px] font-semibold text-[#876b27]">Complete your hold</p><h2 className="mt-0.5 font-semibold text-[#4f3c0d]">Send the GCash deposit</h2></div></div>{booking.holdExpiresAt&&<div className="flex shrink-0 items-center gap-1.5 rounded-lg bg-white/70 px-2.5 py-2 text-xs text-[#735713]"><Timer aria-hidden size={15}/><HoldCountdown expiresAt={booking.holdExpiresAt.toISOString()}/></div>}</div><dl className="mt-4 divide-y divide-[#e7d6aa] rounded-xl bg-white/55 px-3 text-sm"><div className="flex justify-between gap-4 py-2.5"><dt>Amount</dt><dd className="tabular font-semibold">{formatMoney(booking.depositCentavos)}</dd></div><div className="flex justify-between gap-4 py-2.5"><dt>GCash number</dt><dd className="tabular font-semibold">{settings.gcashNumber??"Contact Beautyfeel"}</dd></div><div className="flex justify-between gap-4 py-2.5"><dt>Account name</dt><dd className="font-semibold">{settings.gcashName??"Beautyfeel"}</dd></div><div className="flex justify-between gap-4 py-2.5"><dt>Sender name</dt><dd className="font-semibold">{booking.gcashSenderName}</dd></div></dl>{settings.gcashNumber&&<div className="mt-3 flex flex-wrap gap-2"><CopyValueButton value={settings.gcashNumber} label="number"/><CopyValueButton value={formatMoney(booking.depositCentavos)} label="amount"/></div>}<p className="my-4 text-xs leading-5">Mark it sent below. Beautyfeel normally verifies it within {settings.verificationSlaMinutes} minutes.</p><DepositClaimButton bookingCode={booking.publicCode}/></section>}<StatusMessage status={booking.status}/>{["AWAITING_PAYMENT","PENDING_VERIFICATION","CONFIRMED"].includes(booking.status)&&<CustomerCancellation bookingCode={booking.publicCode}/>}</div>
     </div>
     <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-ink-muted"><ShieldCheck aria-hidden size={15}/>Keep this private page for booking updates.</p>
-  </main>;
+  </main></BookingStatusMotion>;
 }
 
 export default function BookingStatusPage({ params }: Props) { return <Suspense fallback={<BookingStatusSkeleton/>}><BookingStatusContent params={params}/></Suspense>; }

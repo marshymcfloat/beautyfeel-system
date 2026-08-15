@@ -1,19 +1,20 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { DateTime } from "luxon";
 import { getOwnerBookingById } from "@/features/bookings/queries";
-import { getStaffDirectory } from "@/features/staff/queries";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { BookingManagement, PaymentDecision } from "@/components/portal/booking-actions";
 import { formatManilaDateTime, formatManilaTime, formatMoney } from "@/lib/format";
+import { PortalDetailSkeleton } from "@/components/ui/skeletons";
 
 export const metadata = { title: "Booking details" };
 export const instant = false;
 
 type Props = { params: Promise<{ bookingId: string }> };
 
-export default async function BookingDetailPage({ params }: Props) {
+async function BookingDetailContent({ params }: Props) {
   const { bookingId } = await params;
-  const [booking, staff] = await Promise.all([getOwnerBookingById(bookingId), getStaffDirectory()]);
+  const booking = await getOwnerBookingById(bookingId);
   const currentStart = DateTime.fromJSDate(booking.requestedStartsAt, { zone: "utc" })
     .setZone("Asia/Manila")
     .toFormat("yyyy-LL-dd'T'HH:mm");
@@ -75,12 +76,7 @@ export default async function BookingDetailPage({ params }: Props) {
           </section>
 
           {booking.status === "CONFIRMED" && (
-            <BookingManagement
-              bookingId={booking.id}
-              currentStart={currentStart}
-              segments={booking.segments.map((segment) => ({ id: segment.id, label: booking.services.find((item) => item.id === segment.bookingServiceId)?.serviceName ?? "Service", staffId: segment.staffId }))}
-              staff={staff.filter((item) => item.active).map((item) => ({ id: item.id, publicName: item.publicName, skills: item.skills.map((skill) => ({ serviceId: skill.serviceId })) }))}
-            />
+            <BookingManagement bookingId={booking.id} currentStart={currentStart} />
           )}
         </div>
 
@@ -122,4 +118,8 @@ export default async function BookingDetailPage({ params }: Props) {
       </div>
     </div>
   );
+}
+
+export default function BookingDetailPage(props: Props) {
+  return <div><p className="text-sm font-semibold text-brand-800">Booking record</p><h1 className="text-h1 mt-1">Booking details</h1><div className="mt-5"><Suspense fallback={<PortalDetailSkeleton/>}><BookingDetailContent params={props.params}/></Suspense></div></div>;
 }

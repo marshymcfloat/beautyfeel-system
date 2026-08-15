@@ -20,7 +20,10 @@ export function verifySecret(provided: string, expected: string): boolean {
 }
 
 export function createTemporaryPassword(): string {
-  return `${randomBytes(12).toString("base64url")}!${randomInt(10, 99)}`;
+  const consonants = "BCDFGHJKLMNPQRSTVWXYZ";
+  const vowels = "aeiou";
+  const pick = (characters: string) => characters[randomInt(characters.length)];
+  return `${pick(consonants)}${pick(vowels)}${pick(consonants).toLowerCase()}${pick(vowels)}${randomInt(1000, 10000)}`;
 }
 
 export function createPublicBookingCode(now = new Date()): string {

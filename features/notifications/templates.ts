@@ -1,4 +1,4 @@
-type SmsPayload = { bookingCode?: string; customerName?: string; startsAt?: string; message?: string };
+type SmsPayload = { bookingCode?: string; customerName?: string; startsAt?: string; message?: string; phone?: string; temporaryPassword?: string };
 
 function appointment(value?: string): string {
   if (!value) return "your selected schedule";
@@ -15,6 +15,8 @@ function firstName(value?: string): string {
 
 export function renderSms(eventType: string, payload: SmsPayload): string {
   const code = payload.bookingCode ?? "your booking";
+  if (eventType === "ASSISTANT_WELCOME") return `Hi ${firstName(payload.customerName)}! Your Beautyfeel assistant account is ready. Login: ${payload.phone}. Temporary password: ${payload.temporaryPassword}. Please change it after signing in.`;
+  if (eventType === "ASSISTANT_PASSWORD_RESET") return `Hi ${firstName(payload.customerName)}! Your Beautyfeel temporary password is ${payload.temporaryPassword}. Please sign in and create a new password.`;
   if (eventType === "CONFIRMED") {
     return `Hi ${firstName(payload.customerName)}! Thank you for choosing Beautyfeel. Your appointment is confirmed for ${appointment(payload.startsAt)}. See you then!`;
   }

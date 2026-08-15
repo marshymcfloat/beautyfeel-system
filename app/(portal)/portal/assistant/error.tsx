@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorPage({ reset }: { error: Error; reset: () => void }) { return <div className="rounded-2xl border border-line bg-surface p-6"><h1 className="text-h2">This workspace could not be loaded</h1><p className="mt-2 text-ink-muted">Try again. No booking data has been changed.</p><button onClick={reset} className="mt-5 min-h-12 rounded-xl bg-brand-900 px-5 font-semibold text-white">Try again</button></div>; }

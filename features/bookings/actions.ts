@@ -59,8 +59,9 @@ export async function cancelBooking(input: unknown) {
 
 export async function rescheduleBooking(input: unknown) {
   return runAction(async () => {
-    const actor = await requireActor(["OWNER"]);
+    const actor = await requireActor(["OWNER", "BOOKING_ASSISTANT"]);
     const data = rescheduleBookingSchema.parse(input);
+    if (actor.role === "BOOKING_ASSISTANT" && data.overrideReason) throw new DomainError("FORBIDDEN", "Only the owner can override rescheduling rules.");
     const result = await rescheduleExistingBooking(data, actor.id);
     revalidatePath("/portal/owner", "layout");
     return result;
@@ -69,7 +70,7 @@ export async function rescheduleBooking(input: unknown) {
 
 export async function createManualBooking(input: unknown) {
   return runAction(async () => {
-    const actor = await requireActor(["OWNER"]);
+    const actor = await requireActor(["OWNER", "BOOKING_ASSISTANT"]);
     const data = manualBookingSchema.parse(input);
     const result = await createOwnerManualBooking(data, actor.id);
     await processSmsEvent(`${result.bookingId}:CONFIRMED`);

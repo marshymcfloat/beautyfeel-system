@@ -6,35 +6,15 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/aut
 import { prisma } from "@/lib/db/prisma";
 import { DomainError } from "@/lib/errors/domain-error";
 import { runAction } from "@/lib/errors/action";
-import { normalizePhilippinePhone } from "@/lib/security/phone";
-import { phoneToAuthEmail } from "@/lib/security/auth-identifier";
 import { createTemporaryPassword } from "@/lib/security/tokens";
-import { createStaffSchema, staffBreaksSchema, staffIdSchema, staffScheduleSchema, staffSkillsSchema, staffTimeOffSchema, userIdSchema } from "./schema";
+import { staffBreaksSchema, staffIdSchema, staffScheduleSchema, staffSkillsSchema, staffTimeOffSchema, userIdSchema } from "./schema";
 import { conflictsWithBreaks, conflictsWithSchedule } from "./conflicts";
 import { getFutureStaffSegments, resolveStaffingConflicts } from "./safety";
 
-export async function createStaffAccount(input: unknown) {
+export async function createStaffAccount() {
   return runAction(async () => {
-    const actor = await requireActor(["OWNER"]);
-    const data = createStaffSchema.parse(input);
-    const phone = normalizePhilippinePhone(data.phone);
-    const email = phoneToAuthEmail(phone);
-    const temporaryPassword = createTemporaryPassword();
-    const admin = createSupabaseAdminClient();
-    const { data: authData, error } = await admin.auth.admin.createUser({ email, password: temporaryPassword, email_confirm: true });
-    if (error || !authData.user) throw new DomainError("INTERNAL_ERROR", "Unable to create staff account.");
-    try {
-      const staff = await prisma.$transaction(async (tx) => {
-        await tx.userProfile.create({ data: { id: authData.user.id, role: "STAFF", displayName: data.displayName, phoneE164: phone } });
-        const created = await tx.staffProfile.create({ data: { userId: authData.user.id, publicName: data.publicName, internalName: data.internalName } });
-        await tx.auditLog.create({ data: { actorId: actor.id, action: "STAFF_CREATED", entityType: "StaffProfile", entityId: created.id } });
-        return created;
-      });
-      return { staff, temporaryPassword };
-    } catch (cause) {
-      await admin.auth.admin.deleteUser(authData.user.id);
-      throw cause;
-    }
+    await requireActor(["OWNER"]);
+    throw new DomainError("INVALID_STATE", "Treatment-staff accounts are no longer supported. Create a booking assistant instead.");
   });
 }
 

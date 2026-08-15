@@ -10,6 +10,7 @@ datasource db {
 enum UserRole {
   OWNER
   STAFF
+  BOOKING_ASSISTANT
 }
 
 enum BookingSource {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createService, setServiceActive, updateService } from "@/features/services/actions";
 import { formatMoney } from "@/lib/format";
@@ -12,6 +12,8 @@ export function ServiceManager({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [optimisticCategories, setOptimisticService] = useOptimistic(categories, (state, change: { id: string; active: boolean }) => state.map((category) => ({ ...category, services: category.services.map((service) => service.id === change.id ? { ...service, active: change.active } : service) })));
+  const [busyServiceId, setBusyServiceId] = useState<string | null>(null);
   function run(work: () => Promise<{ ok:boolean; error?:{ message:string } }>) {
     setMessage(null);
     start(async () => {
@@ -20,14 +22,25 @@ export function ServiceManager({ categories }: { categories: Category[] }) {
       if (result.ok) router.refresh();
     });
   }
+  function toggle(service: Service) {
+    if (busyServiceId) return;
+    setBusyServiceId(service.id);
+    setMessage(null);
+    start(async () => {
+      setOptimisticService({ id: service.id, active: !service.active });
+      const result = await setServiceActive({ id: service.id, active: !service.active });
+      if (!result.ok) setMessage(result.error.message);
+      setBusyServiceId(null);
+    });
+  }
   return <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-    <div className="space-y-8">{categories.map(category => <section key={category.id}>
+    <div className="space-y-8">{optimisticCategories.map(category => <section key={category.id}>
       <h2 className="text-h2">{category.name}</h2>
       <div className="mt-3 overflow-hidden rounded-2xl border border-line bg-surface">
         {category.services.length ? category.services.map(service => <details key={service.id} className="border-b border-line p-5 last:border-0">
           <summary className="flex cursor-pointer list-none items-start justify-between gap-4"><div><p className="font-semibold">{service.name}</p><p className="tabular mt-1 text-sm text-ink-muted">{formatMoney(service.priceCentavos)} · {service.durationMinutes} min</p></div><span className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${service.active ? "bg-success-soft text-success" : "bg-surface-muted text-ink-muted"}`}>{service.active ? "Active" : "Inactive"}</span></summary>
           <ServiceForm service={service} categories={categories} pending={pending} onSubmit={data => run(() => updateService(data))}/>
-          <button type="button" disabled={pending} onClick={() => run(() => setServiceActive({ id:service.id, active:!service.active }))} className="mt-4 min-h-11 rounded-xl border border-line px-4 text-sm font-semibold text-ink-muted">{service.active ? "Hide from booking" : "Make active"}</button>
+          <button type="button" disabled={busyServiceId===service.id} onClick={() => toggle(service)} className="mt-4 min-h-11 rounded-xl border border-line px-4 text-sm font-semibold text-ink-muted">{busyServiceId===service.id ? "Saving..." : service.active ? "Hide from booking" : "Make active"}</button>
         </details>) : <p className="p-5 text-sm text-ink-muted">No services in this category.</p>}
       </div>
     </section>)}</div>

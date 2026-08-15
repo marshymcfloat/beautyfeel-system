@@ -25,7 +25,7 @@ export default function SettingsPage() {
 
     <nav className="mt-5 grid gap-2.5 sm:grid-cols-3" aria-label="Management areas">
       <ManageLink href="/portal/owner/services" title="Services" text="Prices and durations" icon={<Scissors size={21} weight="duotone" />} tone="teal" />
-      <ManageLink href="/portal/owner/staff" title="Staff" text="Skills and schedules" icon={<UsersThree size={21} weight="duotone" />} tone="blue" />
+      <ManageLink href="/portal/owner/assistants" title="Booking assistants" text="Accounts and access" icon={<UsersThree size={21} weight="duotone" />} tone="blue" />
       <ManageLink href="/portal/owner/account" title="Account" text="Profile and security" icon={<UserCircle size={21} weight="duotone" />} tone="sand" />
     </nav>
 
