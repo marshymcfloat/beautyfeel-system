@@ -6,6 +6,7 @@ import { ArrowRight, CalendarBlank, CaretLeft, CaretRight, Clock, Plus, UserFocu
 import { getDashboardSchedule } from "@/features/bookings/queries";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatManilaTime } from "@/lib/format";
+import { SectionRefreshButton } from "@/components/portal/section-refresh-button";
 
 type Props = { searchParams: Promise<{ date?: string }> };
 
@@ -89,7 +90,7 @@ function CalendarSkeleton() {
 
 export default function CalendarPage(props: Props) {
   return <div className="mx-auto max-w-6xl">
-    <header className="flex items-end justify-between gap-4"><div><p className="text-[11px] font-semibold text-brand-700">Schedule</p><h1 className="mt-1 text-2xl font-semibold tracking-[-.035em] sm:text-3xl">Calendar</h1><p className="mt-2 text-sm text-ink-muted">Choose a date to review confirmed appointments.</p></div><Link href="/portal/owner/bookings/new" className="hidden min-h-11 items-center gap-2 rounded-xl bg-brand-950 px-4 text-sm font-semibold text-white transition hover:bg-brand-800 sm:inline-flex"><Plus size={16} weight="bold" /> New booking</Link></header>
+    <header className="flex items-end justify-between gap-4"><div><p className="text-[11px] font-semibold text-brand-700">Schedule</p><h1 className="mt-1 text-2xl font-semibold tracking-[-.035em] sm:text-3xl">Calendar</h1><p className="mt-2 text-sm text-ink-muted">Choose a date to review confirmed appointments.</p></div><div className="flex items-center gap-2"><SectionRefreshButton sections={["schedule"]} label="Refresh calendar"/><Link href="/portal/owner/bookings/new" className="hidden min-h-11 items-center gap-2 rounded-xl bg-brand-950 px-4 text-sm font-semibold text-white transition hover:bg-brand-800 sm:inline-flex"><Plus size={16} weight="bold" /> New booking</Link></div></header>
     <Suspense fallback={<CalendarSkeleton />}><CalendarContent searchParams={props.searchParams} /></Suspense>
   </div>;
 }

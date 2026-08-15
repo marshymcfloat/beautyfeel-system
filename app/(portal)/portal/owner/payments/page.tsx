@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { getOwnerPayments } from "@/features/bookings/queries";
 import { formatManilaDateTime, formatMoney } from "@/lib/format";
 import { PortalRowsSkeleton } from "@/components/ui/skeletons";
+import { SectionRefreshButton } from "@/components/portal/section-refresh-button";
 
 export const metadata = { title: "Payment review" };
 export const instant = false;
@@ -20,5 +21,5 @@ async function PaymentsContent({ searchParams }: Props) {
 }
 
 export default function PaymentsPage(props: Props) {
-  return <div><p className="text-sm font-semibold text-brand-800">Owner queue</p><h1 className="text-h1 mt-1">Payment review</h1><p className="mt-3 max-w-xl text-ink-muted">Match the GCash sender, amount, and claim time before deciding.</p><div className="mt-6"><Suspense fallback={<><div className="skeleton h-11 rounded-xl"/><div className="mt-4 skeleton h-11 rounded-xl"/><div className="mt-5"><PortalRowsSkeleton rows={5}/></div></>}><PaymentsContent searchParams={props.searchParams}/></Suspense></div></div>;
+  return <div><div className="flex items-end justify-between gap-3"><div><p className="text-sm font-semibold text-brand-800">Owner queue</p><h1 className="text-h1 mt-1">Payment review</h1></div><SectionRefreshButton sections={["payments"]} label="Refresh payments"/></div><p className="mt-3 max-w-xl text-ink-muted">Match the GCash sender, amount, and claim time before deciding.</p><div className="mt-6"><Suspense fallback={<><div className="skeleton h-11 rounded-xl"/><div className="mt-4 skeleton h-11 rounded-xl"/><div className="mt-5"><PortalRowsSkeleton rows={5}/></div></>}><PaymentsContent searchParams={props.searchParams}/></Suspense></div></div>;
 }

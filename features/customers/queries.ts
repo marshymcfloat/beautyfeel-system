@@ -1,10 +1,17 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { requireActor } from "@/lib/auth/session";
+import { bookingCacheTag, portalCacheLife, portalCacheTags } from "@/lib/cache/portal";
 import { prisma } from "@/lib/db/prisma";
-export async function getCustomerTrustProfiles(){await requireActor(["OWNER"]);return prisma.customerTrustProfile.findMany({orderBy:{updatedAt:"desc"},take:100})}
+export async function getCustomerTrustProfiles(){await requireActor(["OWNER"]);return loadCustomerTrustProfiles()}
+async function loadCustomerTrustProfiles(){"use cache";cacheLife(portalCacheLife);cacheTag(portalCacheTags.trustProfiles);return prisma.customerTrustProfile.findMany({orderBy:{updatedAt:"desc"},take:100})}
 export async function getCustomerStoreCredits(phoneE164:string){await requireActor(["OWNER"]);return prisma.storeCredit.findMany({where:{customerPhoneE164:phoneE164,status:"ACTIVE",expiresAt:{gt:new Date()}},orderBy:{expiresAt:"asc"}})}
 export async function getBookingOperations(bookingId:string,phoneE164:string){
   await requireActor(["OWNER"]);
+  return loadBookingOperations(bookingId,phoneE164);
+}
+async function loadBookingOperations(bookingId:string,phoneE164:string){
+  "use cache";cacheLife(portalCacheLife);cacheTag(portalCacheTags.customers,bookingCacheTag(bookingId));
   const [credits,sms]=await Promise.all([
     prisma.storeCredit.findMany({where:{customerPhoneE164:phoneE164},orderBy:{createdAt:"desc"},take:20}),
     prisma.smsOutbox.findMany({where:{eventKey:{startsWith:`${bookingId}:`}},orderBy:{createdAt:"desc"},take:20}),
@@ -14,6 +21,12 @@ export async function getBookingOperations(bookingId:string,phoneE164:string){
 
 export async function getRecentCustomers() {
   await requireActor(["OWNER", "BOOKING_ASSISTANT"]);
+  return loadRecentCustomers();
+}
+async function loadRecentCustomers() {
+  "use cache";
+  cacheLife(portalCacheLife);
+  cacheTag(portalCacheTags.customers);
   const bookings = await prisma.booking.findMany({
     select: { customerName: true, customerPhoneE164: true, requestedStartsAt: true },
     orderBy: { createdAt: "desc" },

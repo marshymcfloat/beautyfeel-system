@@ -6,6 +6,7 @@ import { SignOutButton } from "@/components/portal/sign-out-button";
 import { CustomerTrustManager } from "@/components/portal/customer-trust-manager";
 import { getCustomerTrustProfiles } from "@/features/customers/queries";
 import { PortalRowsSkeleton } from "@/components/ui/skeletons";
+import { SectionRefreshButton } from "@/components/portal/section-refresh-button";
 
 export const metadata = { title: "Account" };
 export const instant = false;
@@ -22,5 +23,5 @@ async function TrustContent() {
 }
 
 export default function AccountPage() {
-  return <div className="max-w-4xl"><p className="text-sm font-semibold text-brand-800">Owner profile</p><h1 className="text-h1 mt-1">Account</h1><div className="mt-7"><Suspense fallback={<div className="skeleton h-48 rounded-2xl"/>}><ProfileCard/></Suspense></div><Suspense fallback={<div className="mt-6"><PortalRowsSkeleton rows={4}/></div>}><TrustContent/></Suspense></div>;
+  return <div className="max-w-4xl"><div className="flex items-end justify-between gap-3"><div><p className="text-sm font-semibold text-brand-800">Owner profile</p><h1 className="text-h1 mt-1">Account</h1></div><SectionRefreshButton sections={["trust"]} label="Refresh customer trust profiles"/></div><div className="mt-7"><Suspense fallback={<div className="skeleton h-48 rounded-2xl"/>}><ProfileCard/></Suspense></div><Suspense fallback={<div className="mt-6"><PortalRowsSkeleton rows={4}/></div>}><TrustContent/></Suspense></div>;
 }

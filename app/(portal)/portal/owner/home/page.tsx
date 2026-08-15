@@ -11,6 +11,7 @@ import { formatManilaDateTime, formatManilaTime, formatMoney } from "@/lib/forma
 import { getServerEnv } from "@/lib/env/server";
 import { getWorkflowEfficiency } from "@/features/efficiency/queries";
 import { WorkflowEfficiency } from "@/components/portal/workflow-efficiency";
+import { SectionRefreshButton } from "@/components/portal/section-refresh-button";
 
 export const metadata = { title: "Home" };
 export const instant = false;
@@ -35,7 +36,9 @@ async function HomeContent() {
   const env = getServerEnv();
 
   return <div className="space-y-4">
-    <RealtimeRefresh url={env.SUPABASE_URL} publishableKey={env.SUPABASE_PUBLISHABLE_KEY} topics={[`schedule:${todayStart.toISODate()}`, "schedule:all"]} />
+    <RealtimeRefresh url={env.SUPABASE_URL} publishableKey={env.SUPABASE_PUBLISHABLE_KEY} topics={[`schedule:${todayStart.toISODate()}`, "schedule:all"]} portalSections={["bookings", "schedule", "alerts"]} />
+
+    <div className="flex justify-end"><SectionRefreshButton sections={["bookings", "schedule", "alerts"]} label="Refresh dashboard overview" /></div>
 
     <section className="grid grid-cols-3 gap-2" aria-label="Workspace overview">
       <Summary icon={<CalendarCheck size={22} weight="duotone" />} value={today.length} label="Today" tone="green" />
@@ -43,7 +46,7 @@ async function HomeContent() {
       <Summary icon={<UsersThree size={22} weight="duotone" />} value={staffing.length} label="Need staff" tone="blue" />
     </section>
 
-    <WorkflowEfficiency {...efficiency} />
+    <div className="relative"><div className="absolute right-2 top-1 z-[1]"><SectionRefreshButton sections={["efficiency"]} label="Refresh workflow efficiency" /></div><WorkflowEfficiency {...efficiency} /></div>
 
     {needsAttention && <section className="overflow-hidden rounded-[20px] bg-[#fff7df] shadow-[0_8px_24px_rgba(91,69,15,.07)]">
       <div className="flex items-center justify-between px-4 py-3"><div className="flex items-center gap-2"><WarningCircle className="text-[#856516]" size={18} weight="fill" /><h2 className="text-sm font-semibold text-[#4f3c0d]">Needs attention</h2></div><Link href="/portal/owner/bookings" className="text-[10px] font-semibold text-[#765710]">Open bookings</Link></div>
@@ -61,7 +64,7 @@ async function HomeContent() {
 type ScheduleItem = Awaited<ReturnType<typeof getDashboardSchedule>>[number];
 
 function SchedulePreview({ title, caption, icon, items, href, empty, showDate = false }: { title: string; caption: string; icon: React.ReactNode; items: ScheduleItem[]; href: string; empty: string; showDate?: boolean }) {
-  return <section className="overflow-hidden rounded-[20px] bg-surface shadow-[0_8px_24px_rgba(23,48,46,.06)]"><header className="flex items-center justify-between gap-3 px-4 py-3.5"><div className="flex items-center gap-2.5"><span className="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-800">{icon}</span><div><h2 className="text-base font-semibold tracking-[-.02em]">{title}</h2><p className="mt-0.5 text-[10px] text-ink-subtle">{caption}</p></div></div><Link href={href} aria-label={`Open ${title.toLowerCase()} schedule`} className="grid size-10 place-items-center rounded-xl text-brand-800 hover:bg-brand-50"><ArrowRight size={15} weight="bold" /></Link></header>{items.length ? <div className="divide-y divide-line border-t border-line">{items.map((item) => <Link key={item.id} href={`/portal/owner/bookings/${item.id}`} className="group grid grid-cols-[64px_1fr_auto] items-center gap-3 px-4 py-3 hover:bg-brand-50/60"><div><p className="tabular text-xs font-semibold text-brand-900">{showDate ? DateTime.fromJSDate(item.requestedStartsAt, { zone: "utc" }).setZone("Asia/Manila").toFormat("d LLL") : formatManilaTime(item.requestedStartsAt)}</p><p className="tabular mt-0.5 text-[9px] text-ink-subtle">{showDate ? formatManilaTime(item.requestedStartsAt) : DateTime.fromJSDate(item.requestedEndsAt, { zone: "utc" }).setZone("Asia/Manila").toFormat("h:mm a")}</p></div><div className="min-w-0 border-l border-line pl-3"><p className="truncate text-xs font-semibold">{item.customerName}</p><p className="mt-0.5 truncate text-[10px] text-ink-muted">{item.services.map((service) => service.serviceName).join(", ")}</p></div><span className={`size-2 rounded-full ${item.staffingStatus === "FLEX_RESERVED" ? "bg-warning" : "bg-success"}`} aria-label={item.staffingStatus === "FLEX_RESERVED" ? "Staffing required" : "Assigned"} /></Link>)}</div> : <div className="border-t border-line px-4 py-5"><p className="text-xs font-semibold">{empty}</p><p className="mt-1 text-[10px] text-ink-muted">Confirmed bookings will appear here.</p></div>}</section>;
+  return <section className="overflow-hidden rounded-[20px] bg-surface shadow-[0_8px_24px_rgba(23,48,46,.06)]"><header className="flex items-center justify-between gap-3 px-4 py-3.5"><div className="flex items-center gap-2.5"><span className="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-800">{icon}</span><div><h2 className="text-base font-semibold tracking-[-.02em]">{title}</h2><p className="mt-0.5 text-[10px] text-ink-subtle">{caption}</p></div></div><div className="flex items-center"><SectionRefreshButton sections={["schedule"]} label={`Refresh ${title.toLowerCase()} schedule`} /><Link href={href} aria-label={`Open ${title.toLowerCase()} schedule`} className="grid size-10 place-items-center rounded-xl text-brand-800 hover:bg-brand-50"><ArrowRight size={15} weight="bold" /></Link></div></header>{items.length ? <div className="divide-y divide-line border-t border-line">{items.map((item) => <Link key={item.id} href={`/portal/owner/bookings/${item.id}`} className="group grid grid-cols-[64px_1fr_auto] items-center gap-3 px-4 py-3 hover:bg-brand-50/60"><div><p className="tabular text-xs font-semibold text-brand-900">{showDate ? DateTime.fromJSDate(item.requestedStartsAt, { zone: "utc" }).setZone("Asia/Manila").toFormat("d LLL") : formatManilaTime(item.requestedStartsAt)}</p><p className="tabular mt-0.5 text-[9px] text-ink-subtle">{showDate ? formatManilaTime(item.requestedStartsAt) : DateTime.fromJSDate(item.requestedEndsAt, { zone: "utc" }).setZone("Asia/Manila").toFormat("h:mm a")}</p></div><div className="min-w-0 border-l border-line pl-3"><p className="truncate text-xs font-semibold">{item.customerName}</p><p className="mt-0.5 truncate text-[10px] text-ink-muted">{item.services.map((service) => service.serviceName).join(", ")}</p></div><span className={`size-2 rounded-full ${item.staffingStatus === "FLEX_RESERVED" ? "bg-warning" : "bg-success"}`} aria-label={item.staffingStatus === "FLEX_RESERVED" ? "Staffing required" : "Assigned"} /></Link>)}</div> : <div className="border-t border-line px-4 py-5"><p className="text-xs font-semibold">{empty}</p><p className="mt-1 text-[10px] text-ink-muted">Confirmed bookings will appear here.</p></div>}</section>;
 }
 
 function Summary({ icon, value, label, tone }: { icon: React.ReactNode; value: number; label: string; tone: "green" | "amber" | "blue" }) {

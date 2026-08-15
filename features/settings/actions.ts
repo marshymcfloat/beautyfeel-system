@@ -7,6 +7,7 @@ import { runAction } from "@/lib/errors/action";
 import { DomainError } from "@/lib/errors/domain-error";
 import { DateTime } from "luxon";
 import { businessHoursSchema, businessSettingsSchema, closureSchema, flexCapacitySchema } from "./schema";
+import { portalCacheTags } from "@/lib/cache/portal";
 
 export async function updateBusinessSettings(input: unknown) {
   return runAction(async () => {
@@ -18,6 +19,7 @@ export async function updateBusinessSettings(input: unknown) {
       return updated;
     });
     updateTag("business-settings");
+    updateTag(portalCacheTags.settings);
     return settings;
   });
 }
@@ -26,11 +28,14 @@ export async function createBusinessClosure(input: unknown) {
   return runAction(async () => {
     const actor = await requireActor(["OWNER"]);
     const data = closureSchema.omit({ id: true }).parse(input);
-    return prisma.$transaction(async (tx) => {
+    const closure = await prisma.$transaction(async (tx) => {
       const closure = await tx.businessClosure.create({ data });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "CLOSURE_CREATED", entityType: "BusinessClosure", entityId: closure.id } });
       return closure;
     });
+    updateTag("business-settings");
+    updateTag(portalCacheTags.settings);
+    return closure;
   });
 }
 
@@ -42,6 +47,8 @@ export async function removeBusinessClosure(input: unknown) {
       prisma.businessClosure.delete({ where: { id } }),
       prisma.auditLog.create({ data: { actorId: actor.id, action: "CLOSURE_REMOVED", entityType: "BusinessClosure", entityId: id } }),
     ]);
+    updateTag("business-settings");
+    updateTag(portalCacheTags.settings);
     return { id };
   });
 }
@@ -68,6 +75,7 @@ export async function updateBusinessHours(input: unknown) {
       await tx.auditLog.create({ data: { actorId: actor.id, action: "BUSINESS_HOURS_UPDATED", entityType: "BusinessHours", entityId: "default" } });
     });
     updateTag("business-settings");
+    updateTag(portalCacheTags.settings);
     return { rules: data.rules.length };
   });
 }
@@ -101,6 +109,7 @@ export async function setFlexCapacity(input: unknown) {
       return { categoryId: data.categoryId, capacity: data.capacity, available24Hours: data.available24Hours };
     });
     updateTag("business-settings");
+    updateTag(portalCacheTags.settings);
     return result;
   });
 }

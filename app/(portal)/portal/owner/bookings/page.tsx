@@ -6,6 +6,7 @@ import { getOwnerBookingCounts, getOwnerBookingsByView } from "@/features/bookin
 import { QuickPaymentDecision } from "@/components/portal/quick-payment-decision";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatManilaDateTime, formatMoney } from "@/lib/format";
+import { SectionRefreshButton } from "@/components/portal/section-refresh-button";
 
 type View = "requests" | "confirmed" | "history";
 type Props = { searchParams: Promise<{ view?: string }> };
@@ -100,5 +101,5 @@ function BookingRouteSkeleton() {
 }
 
 export default function BookingsPage(props: Props) {
-  return <div className="mx-auto max-w-5xl"><header className="flex items-end justify-between gap-4"><div><h1 className="text-2xl font-semibold tracking-[-.035em] sm:text-3xl">Bookings</h1><p className="mt-2 max-w-xl text-sm leading-5 text-ink-muted">Review requests, manage confirmed appointments, and find past records.</p></div><Link href="/portal/owner/bookings/new" className="hidden min-h-11 items-center gap-2 rounded-xl bg-brand-950 px-4 text-sm font-semibold text-white transition hover:bg-brand-800 sm:inline-flex"><Plus size={16} weight="bold" /> New booking</Link></header><Suspense fallback={<BookingRouteSkeleton />}><BookingRoute searchParams={props.searchParams} /></Suspense></div>;
+  return <div className="mx-auto max-w-5xl"><header className="flex items-end justify-between gap-4"><div><h1 className="text-2xl font-semibold tracking-[-.035em] sm:text-3xl">Bookings</h1><p className="mt-2 max-w-xl text-sm leading-5 text-ink-muted">Review requests, manage confirmed appointments, and find past records.</p></div><div className="flex items-center gap-2"><SectionRefreshButton sections={["bookings"]} label="Refresh bookings"/><Link href="/portal/owner/bookings/new" className="hidden min-h-11 items-center gap-2 rounded-xl bg-brand-950 px-4 text-sm font-semibold text-white transition hover:bg-brand-800 sm:inline-flex"><Plus size={16} weight="bold" /> New booking</Link></div></header><Suspense fallback={<BookingRouteSkeleton />}><BookingRoute searchParams={props.searchParams} /></Suspense></div>;
 }

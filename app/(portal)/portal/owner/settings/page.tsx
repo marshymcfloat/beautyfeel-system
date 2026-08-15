@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { ArrowRight, Scissors, SlidersHorizontal, UserCircle, UsersThree } from "@phosphor-icons/react/dist/ssr";
 import { getBusinessSettings, getCapacitySettings } from "@/features/settings/queries";
 import { SettingsManager } from "@/components/portal/settings-manager";
+import { SectionRefreshButton } from "@/components/portal/section-refresh-button";
 
 export const metadata = { title: "Settings" };
 export const instant = false;
@@ -17,10 +18,13 @@ async function SettingsContent() {
 
 export default function SettingsPage() {
   return <div className="mx-auto max-w-5xl">
-    <header className="max-w-2xl">
+    <header className="flex max-w-2xl items-end justify-between gap-3">
+      <div>
       <p className="text-xs font-semibold text-brand-800">Business controls</p>
       <h1 className="mt-1 text-2xl font-semibold tracking-[-.035em] sm:text-3xl">Settings</h1>
       <p className="mt-2 text-sm leading-5 text-ink-muted">Manage your catalog, team, payment rules, availability, and closures.</p>
+      </div>
+      <SectionRefreshButton sections={["settings"]} label="Refresh settings" />
     </header>
 
     <nav className="mt-5 grid gap-2.5 sm:grid-cols-3" aria-label="Management areas">

@@ -1,5 +1,7 @@
 "use server";
 
+import { updateTag } from "next/cache";
+
 import { requireActor } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/auth/supabase-server";
 import { prisma } from "@/lib/db/prisma";
@@ -10,6 +12,7 @@ import { phoneToAuthEmail } from "@/lib/security/auth-identifier";
 import { createTemporaryPassword } from "@/lib/security/tokens";
 import { processSmsEvent } from "@/features/notifications/service";
 import { assistantActiveSchema, assistantUserSchema, createAssistantSchema } from "./schema";
+import { portalCacheTags } from "@/lib/cache/portal";
 
 export async function createBookingAssistant(input: unknown) {
   return runAction(async () => {
@@ -28,6 +31,7 @@ export async function createBookingAssistant(input: unknown) {
         prisma.smsOutbox.create({ data: { eventKey, eventType: "ASSISTANT_WELCOME", recipientE164: phone, payload: { customerName: data.displayName, phone, temporaryPassword } } }),
       ]);
       await processSmsEvent(eventKey);
+      updateTag(portalCacheTags.assistants);
       return { userId: auth.user.id, temporaryPassword };
     } catch (cause) { await admin.auth.admin.deleteUser(auth.user.id); throw cause; }
   });
@@ -45,6 +49,7 @@ export async function setBookingAssistantActive(input: unknown) {
       prisma.userProfile.update({ where: { id: data.userId }, data: { active: data.active } }),
       prisma.auditLog.create({ data: { actorId: actor.id, action: data.active ? "BOOKING_ASSISTANT_ACTIVATED" : "BOOKING_ASSISTANT_DEACTIVATED", entityType: "UserProfile", entityId: data.userId } }),
     ]);
+    updateTag(portalCacheTags.assistants);
     return { ...data, temporaryPassword: undefined as string | undefined };
   });
 }
@@ -64,6 +69,7 @@ export async function resetBookingAssistantPassword(input: unknown) {
       prisma.smsOutbox.create({ data: { eventKey, eventType: "ASSISTANT_PASSWORD_RESET", recipientE164: profile.phoneE164, payload: { customerName: profile.displayName, temporaryPassword } } }),
     ]);
     await processSmsEvent(eventKey);
+    updateTag(portalCacheTags.assistants);
     return { temporaryPassword };
   });
 }
@@ -94,6 +100,7 @@ export async function deleteBookingAssistant(input: unknown) {
       prisma.userProfile.delete({ where: { id: userId } }),
       prisma.auditLog.create({ data: { actorId: actor.id, action: "BOOKING_ASSISTANT_DELETED", entityType: "UserProfile", entityId: userId } }),
     ]);
+    updateTag(portalCacheTags.assistants);
     return { userId };
   });
 }

@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  images: { qualities: [75, 95] },
   poweredByHeader: false,
   experimental: {
     serverActions: { bodySizeLimit: "256kb" },

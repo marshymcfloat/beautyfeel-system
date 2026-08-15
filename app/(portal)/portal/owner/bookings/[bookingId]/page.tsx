@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { BookingManagement, PaymentDecision } from "@/components/portal/booking-actions";
 import { formatManilaDateTime, formatManilaTime, formatMoney } from "@/lib/format";
 import { PortalDetailSkeleton } from "@/components/ui/skeletons";
+import { SectionRefreshButton } from "@/components/portal/section-refresh-button";
 
 export const metadata = { title: "Booking details" };
 export const instant = false;
@@ -121,5 +122,5 @@ async function BookingDetailContent({ params }: Props) {
 }
 
 export default function BookingDetailPage(props: Props) {
-  return <div><p className="text-sm font-semibold text-brand-800">Booking record</p><h1 className="text-h1 mt-1">Booking details</h1><div className="mt-5"><Suspense fallback={<PortalDetailSkeleton/>}><BookingDetailContent params={props.params}/></Suspense></div></div>;
+  return <div><div className="flex items-end justify-between gap-3"><div><p className="text-sm font-semibold text-brand-800">Booking record</p><h1 className="text-h1 mt-1">Booking details</h1></div><SectionRefreshButton sections={["booking"]} label="Refresh booking details"/></div><div className="mt-5"><Suspense fallback={<PortalDetailSkeleton/>}><BookingDetailContent params={props.params}/></Suspense></div></div>;
 }

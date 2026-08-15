@@ -6,6 +6,7 @@ import { getPublicServices } from "@/features/services/queries";
 import { ManualBookingForm } from "@/components/portal/manual-booking-form";
 import { getRecentCustomers } from "@/features/customers/queries";
 import { PortalFormSkeleton } from "@/components/ui/skeletons";
+import { SectionRefreshButton } from "@/components/portal/section-refresh-button";
 
 export const metadata = { title: "New manual booking" };
 export const instant = false;
@@ -28,6 +29,7 @@ export default function NewBookingPage() {
           <h1 className="text-h1 mt-1 text-balance">Create a booking</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">For phone, Messenger, and walk-in appointments. Complete the workspace and confirm once.</p>
         </div>
+        <SectionRefreshButton sections={["booking-form"]} label="Refresh booking form data" />
         <span className="inline-flex w-fit items-center rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink-muted">Live conflict checks enabled</span>
       </header>
       <div className="mt-6"><Suspense fallback={<PortalFormSkeleton/>}><BookingForm/></Suspense></div>
